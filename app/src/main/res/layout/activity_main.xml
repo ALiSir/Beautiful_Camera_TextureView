@@ -8,10 +8,8 @@
     tools:context="beautiful.libo.com.beautiful_camera_textureview.MainActivity">
 
 
-    <TextureView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/textureView"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+    <android.opengl.GLSurfaceView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/surfaceView" />
 </RelativeLayout>

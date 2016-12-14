@@ -1,67 +1,88 @@
 package beautiful.libo.com.beautiful_camera_textureview;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
-import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.SurfaceTexture;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.net.Uri;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.text.LoginFilter;
 import android.util.Log;
-import android.view.TextureView;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends Activity implements Camera.PreviewCallback,TextureView.SurfaceTextureListener{
+import jp.co.cyberagent.android.gpuimage.GPUImage;
+import jp.co.cyberagent.android.gpuimage.GPUImageSepiaFilter;
+
+public class MainActivity extends Activity implements Camera.PreviewCallback, SurfaceHolder.Callback {
     private static final String TAG = MainActivity.class.getSimpleName();
     private Camera camera;
-    private TextureView tv;
+    private SurfaceView sv;
+    private SurfaceHolder sh;
+    private GPUImage imagegp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        tv = new TextureView(this);
-        tv.setSurfaceTextureListener(this);
-        setContentView(tv);
+        camera = Camera.open(1);
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setJpegQuality(80);
+        camera.setDisplayOrientation(90);
 
+
+        camera.setPreviewCallback(this);
+
+        camera.setPreviewCallback(this);
+        camera.startPreview();
+
+        /*sv = (SurfaceView) findViewById(R.id.surfaceView);
+        sh = sv.getHolder();
+        sh.setKeepScreenOn(true);
+        sh.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        sh.addCallback(this);*/
     }
 
     @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.i(TAG, "onSurfaceTextureAvailable: SurfaceTexture创建");
+    public void surfaceCreated(SurfaceHolder holder) {
+
+        Log.i(TAG, "surfaceChanged: Surface创建");
         camera = Camera.open(1);
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setJpegQuality(80);
+        camera.setDisplayOrientation(90);
+
+
         camera.setPreviewCallback(this);
         try {
-            camera.setPreviewTexture(tv.getSurfaceTexture());
+            camera.setPreviewDisplay(holder);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        camera.setPreviewCallback(this);
         camera.startPreview();
     }
 
     @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        Log.i(TAG, "onSurfaceTextureSizeChanged: SurfaceTexture尺寸改变");
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
     }
 
     @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        Log.i(TAG, "onSurfaceTextureDestroyed: SurfaceTexture销毁");
-        return true;
+    public void surfaceDestroyed(SurfaceHolder holder) {
+
     }
 
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        Log.i(TAG, "onSurfaceTextureUpdated: SurfaceTexture创建");
-    }
-
+    @SuppressLint("WrongViewCast")
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Log.i(TAG, "onPreviewFrame: 预览回调");
@@ -75,15 +96,21 @@ public class MainActivity extends Activity implements Camera.PreviewCallback,Tex
                 bmp = BitmapFactory.decodeByteArray(stream.toByteArray(), 0, stream.size());
                 stream.close();
             }
+
+            if (bmp != null) {
+                imagegp = new GPUImage(this);
+                imagegp.setGLSurfaceView((GLSurfaceView) findViewById(R.id.surfaceView));
+                imagegp.setImage(bmp);
+                imagegp.setFilter(new GPUImageSepiaFilter(99));
+                Bitmap btms = imagegp.getBitmapWithFilterApplied();
+
+                Log.i(TAG, "onPreviewFrame:正在画");
+                Canvas canvas = sh.lockCanvas();
+                canvas.setBitmap(btms);
+                sh.unlockCanvasAndPost(canvas);
+            }
         } catch (Exception ex) {
             Log.e("Sys", "Error:" + ex.getMessage());
-        }
-
-        if (bmp != null) {
-            Log.i(TAG, "onPreviewFrame: 绘制图片");
-            Canvas canvas = tv.lockCanvas();
-            canvas.drawBitmap(bmp, 0, data.length, new Paint());
-            tv.unlockCanvasAndPost(canvas);
         }
     }
 }
