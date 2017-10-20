@@ -22,12 +22,13 @@ import java.io.IOException;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.GPUImageSepiaFilter;
 
-public class MainActivity extends Activity implements Camera.PreviewCallback, SurfaceHolder.Callback {
+public class MainActivity extends Activity implements Camera.PreviewCallback, SurfaceHolder.Callback ,CameraAutoFoces.CameraFocusListener{
     private static final String TAG = MainActivity.class.getSimpleName();
     private Camera camera;
     private SurfaceView sv;
     private SurfaceHolder sh;
     private GPUImage imagegp;
+    CameraAutoFoces cameraAuto;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +40,9 @@ public class MainActivity extends Activity implements Camera.PreviewCallback, Su
         sh.setKeepScreenOn(true);
         sh.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         sh.addCallback(this);
+        
+        cameraAuto = new CameraAutoFoces(getApplicationContext());
+        cameraAuto.setCameraFocusListener(this);
     }
 
     @Override
@@ -49,9 +53,7 @@ public class MainActivity extends Activity implements Camera.PreviewCallback, Su
         Camera.Parameters parameters = camera.getParameters();
         parameters.setJpegQuality(80);
         camera.setDisplayOrientation(90);
-
-
-        camera.setPreviewCallback(this);
+        
         try {
             camera.setPreviewDisplay(holder);
         } catch (IOException e) {
@@ -59,17 +61,39 @@ public class MainActivity extends Activity implements Camera.PreviewCallback, Su
         }
         camera.setPreviewCallback(this);
         camera.startPreview();
+        cameraAuto.onStart();
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
     }
+    
+     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cameraAuto.onStop();
+    }
+
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
 
     }
+    
+     @Override
+    public void onFocus() {
+        camera.autoFocus(new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                if(success){
+                    Log.i(TAG, "onAutoFocus: 聚焦成功！");
+                    camera.setOneShotPreviewCallback(null);
+                }
+            }
+        });
+    }
+
 
     @SuppressLint("WrongViewCast")
     @Override
