@@ -33,23 +33,12 @@ public class MainActivity extends Activity implements Camera.PreviewCallback, Su
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        camera = Camera.open(1);
-        Camera.Parameters parameters = camera.getParameters();
-        parameters.setJpegQuality(80);
-        camera.setDisplayOrientation(90);
-
-
-        camera.setPreviewCallback(this);
-
-        camera.setPreviewCallback(this);
-        camera.startPreview();
-
-        /*sv = (SurfaceView) findViewById(R.id.surfaceView);
+        
+        sv = (SurfaceView) findViewById(R.id.surfaceView);
         sh = sv.getHolder();
         sh.setKeepScreenOn(true);
         sh.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        sh.addCallback(this);*/
+        sh.addCallback(this);
     }
 
     @Override
